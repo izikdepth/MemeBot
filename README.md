@@ -23,7 +23,13 @@ A simple Discord bot that picks the 10 most active members of a server (guild) a
     pip3 install -r requirements.txt
     ```
 
-4. Start the bot:
+4. Create a Discord bot:
+    Go to the [Discord Developer Dashboard](https://discord.com/developers/applications), create a bot, and copy your bot token. Then go to Discord -> Settings -> Advanced and enable Developer Mode. Next, click on your profile and "Copy User ID", then right-click on the server and "Copy Server ID".
+
+5. Create a `.env` file:
+    Copy and paste the contents of the `.env.example` file into the `.env` file, and fill it with the Guild ID (Server ID), Admin ID, and Bot Token.
+
+6. Start the bot:
     ```sh
     python main.py
     ```
