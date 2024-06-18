@@ -1,0 +1,4 @@
+.env
+winners.json
+
+__pycache__/
