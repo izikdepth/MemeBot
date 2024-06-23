@@ -65,7 +65,7 @@ class PickWinners(commands.Cog):
         else:
             await interaction.followup.send("This command can only be used in the private wallet submission channel or in DMs.", ephemeral=True)
 
-    @tasks.loop(seconds=30)
+    @tasks.loop(hours=24)
     async def scoreboard_refresh(self):
         if not self.activity_counter:
             return
