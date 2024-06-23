@@ -1,4 +1,8 @@
 .env
-winners.json
+*.json
+
 
 __pycache__/
+
+distributor.py
+.todo

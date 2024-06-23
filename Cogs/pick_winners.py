@@ -8,6 +8,7 @@ from discord import app_commands
 from dotenv import load_dotenv
 import asyncio
 
+
 load_dotenv()
 ADMIN_ID = int(os.getenv('ADMIN_ID'))
 GUILD_ID = int(os.getenv('GUILD_ID'))
@@ -21,6 +22,7 @@ class PickWinners(commands.Cog):
         self.winners = self.load_winners()
         self.last_messages = {}
         self.channel_deletion_tasks = {}
+        self.scoreboard_refresh.start()
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -37,16 +39,17 @@ class PickWinners(commands.Cog):
     async def submit_wallet(self, interaction: discord.Interaction, wallet_address: str):
         await interaction.response.defer(ephemeral=True)
 
+
         if not any(interaction.user.id in day_winners['winners'] for day_winners in self.winners.values()):
             await interaction.followup.send("You are not authorized to use this command.", ephemeral=True)
             return
 
-        if isinstance(interaction.channel, discord.DMChannel) or (interaction.channel.name.startswith("wallet-")):
+        if isinstance(interaction.channel, discord.DMChannel) or (isinstance(interaction.channel, discord.TextChannel) and interaction.channel.name.startswith("wallet-")):
             self.wallet_addresses[interaction.user.id] = wallet_address
             admin = self.bot.get_user(ADMIN_ID)
             if admin:
                 await admin.send(f"{interaction.user} has provided their Solana wallet address: ```{wallet_address}```")
-            if interaction.channel.name.startswith("wallet-"):
+            if isinstance(interaction.channel, discord.TextChannel) and interaction.channel.name.startswith("wallet-"):
                 if interaction.channel.id in self.channel_deletion_tasks:
                     self.channel_deletion_tasks[interaction.channel.id].cancel()
                     del self.channel_deletion_tasks[interaction.channel.id]
@@ -57,11 +60,12 @@ class PickWinners(commands.Cog):
                 self.winners[current_date] = {'winners': [], 'wallets': {}}
             self.winners[current_date]['wallets'][str(interaction.user.id)] = wallet_address
 
+            self.save_winners()
             await interaction.followup.send("Your wallet address has been submitted.", ephemeral=True)
         else:
             await interaction.followup.send("This command can only be used in the private wallet submission channel or in DMs.", ephemeral=True)
 
-    @tasks.loop(hours=24)
+    @tasks.loop(seconds=30)
     async def scoreboard_refresh(self):
         if not self.activity_counter:
             return
@@ -71,7 +75,13 @@ class PickWinners(commands.Cog):
         if current_date not in self.winners:
             self.winners[current_date] = {'winners': [], 'wallets': {}}
 
+        # Get the list of winners for the current date
+        current_day_winners = self.winners[current_date]['winners']
+
         for member_id, _ in top_members:
+            if member_id in current_day_winners:
+                continue
+
             member = self.bot.get_user(member_id)
             if member:
                 try:
@@ -129,10 +139,9 @@ class PickWinners(commands.Cog):
     async def before_scoreboard_refresh(self):
         await self.bot.wait_until_ready()
 
-    def start_scoreboard_refresh(self):
-        self.scoreboard_refresh.start()
-
 async def setup(bot):
-    await bot.add_cog(PickWinners(bot))
+    cog = PickWinners(bot)
+    await bot.add_cog(cog)
     if not bot.tree.get_command('submit_wallet'):
-        bot.tree.add_command(PickWinners.submit_wallet)
+        bot.tree.add_command(cog.submit_wallet)
+

@@ -1,2 +1,6 @@
 discord.py
 python-dotenv
+alchemy-sdk
+dataclass-wizard
+solana
+solders
