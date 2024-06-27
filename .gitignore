@@ -4,5 +4,14 @@
 
 __pycache__/
 
-distributor.py
 .todo
+
+# Go files im not done working on.
+*.go
+go.mod
+go.sum
+
+# token listing pr
+peb_pr.md 
+
+

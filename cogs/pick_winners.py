@@ -89,7 +89,7 @@ class PickWinners(commands.Cog):
                     self.bot.loop.create_task(self.delete_dm_after_delay(member, msg, 24 * 3600))
                     self.winners[current_date]['winners'].append(member_id)
                     if member_id in self.last_messages:
-                        await self.last_messages[member_id].add_reaction("🐂")
+                        await self.last_messages[member_id].add_reaction("🚀")
                 except discord.Forbidden:
                     guild = self.bot.get_guild(GUILD_ID)
                     if guild:
@@ -144,4 +144,5 @@ async def setup(bot):
     await bot.add_cog(cog)
     if not bot.tree.get_command('submit_wallet'):
         bot.tree.add_command(cog.submit_wallet)
+
 

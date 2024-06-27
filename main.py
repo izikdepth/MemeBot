@@ -21,7 +21,8 @@ async def on_ready():
 
 async def load_cogs():
     cogs_list = [
-        "Cogs.pick_winners"
+        "cogs.pick_winners",
+        "cogs.raydium_listener",
     ]
 
     for cog in cogs_list:
