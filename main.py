@@ -23,6 +23,7 @@ async def load_cogs():
     cogs_list = [
         "cogs.pick_winners",
         "cogs.raydium_listener",
+        "cogs.dc_commands",
     ]
 
     for cog in cogs_list:
