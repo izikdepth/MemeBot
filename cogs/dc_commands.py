@@ -20,7 +20,8 @@ class DiscordCommands(commands.Cog):
             return
 
         keywords = ["ca", "contract", "contract address"]
-        if any(keyword in message.content.lower() for keyword in keywords):
+        message_words = message.content.lower().split()
+        if any(keyword in message_words for keyword in keywords):
             embed = Embed(title="Contract Address", description=f"```\n{self.contract_address}\n```", color=0x00ff00)
             await message.reply(embed=embed)
 
