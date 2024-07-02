@@ -14,4 +14,7 @@ go.sum
 # token listing pr
 peb_pr.md 
 
+# Dependencies
+node_modules
+
 
