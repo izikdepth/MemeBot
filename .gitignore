@@ -6,12 +6,11 @@ __pycache__/
 
 .todo
 
-# Go files im not done working on.
-*.go
-go.mod
-go.sum
 
 # token listing pr
 peb_pr.md 
+
+# database
+*.db
 
 
