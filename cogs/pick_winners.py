@@ -19,8 +19,6 @@ TOTAL_DISTRIBUTION_LIMIT = int(os.getenv("TOTAL_DISTRIBUTION_LIMIT"))
 POINTS_PER_MESSAGE = 500
 # 24 * 3600 calculates the number of seconds in 24 hours (24 hours * 3600 seconds/hour)
 DELAY_24_HOURS_IN_SECONDS = 24 * 3600
-# TODO: Set delay for testing purposes
-DELAY_FOR_TESTING_IN_SECONDS = 30
 
 class PickWinners(commands.Cog):
     def __init__(self, bot):
@@ -158,8 +156,7 @@ class PickWinners(commands.Cog):
         else:
             await interaction.followup.send("This command can only be used in the private wallet submission channel or in DMs.", ephemeral=True)
 
-    # TODO: change seconds to hours=24 for testing
-    @tasks.loop(seconds=30)
+    @tasks.loop(hours=24)
     async def scoreboard_refresh(self):
         if not self.activity_counter:
             return
@@ -180,8 +177,7 @@ class PickWinners(commands.Cog):
                 if member:
                     try:
                         msg = await member.send("Congratulations! You've earned points today. Please use the /submit_wallet command to provide your Solana wallet address if you haven't already.")
-                        # TODO: change DELAY_FOR_TESTING_IN_SECONDS to DELAY_24_HOURS_IN_SECONDS after testing
-                        self.bot.loop.create_task(self.delete_dm_after_delay(member, msg, DELAY_FOR_TESTING_IN_SECONDS))
+                        self.bot.loop.create_task(self.delete_dm_after_delay(member, msg, DELAY_24_HOURS_IN_SECONDS))
                         if user_id in self.last_messages:
                             await self.last_messages[user_id].add_reaction("🚀")
                     except discord.Forbidden:
@@ -190,8 +186,7 @@ class PickWinners(commands.Cog):
                             channel = await self.create_private_channel(guild, member)
                             if channel:
                                 await channel.send(f"Hi {member.mention}, please use the /submit_wallet command to provide your Solana wallet address if you haven't already.")
-                                # TODO: change DELAY_FOR_TESTING_IN_SECONDS to DELAY_24_HOURS_IN_SECONDS after testing
-                                task = self.bot.loop.create_task(self.delete_channel_after_delay(channel, DELAY_FOR_TESTING_IN_SECONDS))
+                                task = self.bot.loop.create_task(self.delete_channel_after_delay(channel, DELAY_24_HOURS_IN_SECONDS))
                                 self.channel_deletion_tasks[channel.id] = task
 
         self.activity_counter.clear()

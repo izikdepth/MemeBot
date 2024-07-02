@@ -1,5 +1,4 @@
 .env
-*.json
 
 
 __pycache__/
@@ -15,3 +14,4 @@ peb_pr.md
 
 # Dependencies
 node_modules
+
