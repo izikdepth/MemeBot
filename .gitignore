@@ -13,4 +13,5 @@ peb_pr.md
 # database
 *.db
 
-
+# Dependencies
+node_modules
