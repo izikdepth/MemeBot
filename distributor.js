@@ -16,7 +16,7 @@ const {
 const cron = require("node-cron");
 
 const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("./db/meme_bot.db");
+const db = new sqlite3.Database("meme_bot.db");
 const dotenv = require("dotenv").config(".env");
 const bs58 = require("bs58");
 const privateKey = process.env.PRIVATE_KEY; // replace with Solana wallet private key
@@ -131,7 +131,7 @@ async function sentTx() {
 
             //update the DB
             const updateDB = `UPDATE winners SET status = 1
-                                WHERE  wallet_address= ?;`;
+                              WHERE  wallet_address= ?;`;
 
             // change DB state
             if (signAndSendTx) {
@@ -169,12 +169,15 @@ async function sentTx() {
 }
 
 // Main function call
-retryLogic(sentTx);
-
-// execute every 24hrs 2mins
-cron.schedule("2 0 * * *", () => {
-  sentTx();
+//
+sentTx().catch(err => {
+  if (err) retryLogic(sentTx);
 });
+
+// // execute every 24hrs 2mins
+// cron.schedule("2 0 * * *", () => {
+//   sentTx();
+// });
 
 // // execute every 2 2mins
 // cron.schedule("*/2 * * * *", () => {

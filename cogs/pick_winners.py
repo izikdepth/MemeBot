@@ -17,7 +17,6 @@ MAX_DAILY_POINTS = int(os.getenv("MAX_DAILY_POINTS"))
 MAX_USER_POINTS = int(os.getenv("MAX_USER_POINTS"))
 TOTAL_DISTRIBUTION_LIMIT = int(os.getenv("TOTAL_DISTRIBUTION_LIMIT"))
 POINTS_PER_MESSAGE = 500
-# 24 * 3600 calculates the number of seconds in 24 hours (24 hours * 3600 seconds/hour)
 DELAY_24_HOURS_IN_SECONDS = 24 * 3600
 
 class PickWinners(commands.Cog):
@@ -31,24 +30,23 @@ class PickWinners(commands.Cog):
         self.init_db()
 
     def init_db(self):
-        # Connect to the database
         self.conn = sqlite3.connect(DB_FILE)
         self.cursor = self.conn.cursor()
-        
+
         # Create users table if it does not exist
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS users (
                                user_id INTEGER PRIMARY KEY,
                                points INTEGER DEFAULT 0,
-                               tokens INTEGER DEFAULT 0,
                                wallet_address TEXT,
                                last_activity DATE)''')
-        
+
         # Create winners table if it does not exist
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS winners (
                                date TEXT,
                                user_id INTEGER,
                                wallet_address TEXT,
                                points_earned INTEGER DEFAULT 0,
+                               tokens INTEGER DEFAULT 0,
                                status BOOLEAN DEFAULT FALSE,
                                PRIMARY KEY (date, user_id))''')
 
@@ -59,6 +57,8 @@ class PickWinners(commands.Cog):
             self.cursor.execute("ALTER TABLE winners ADD COLUMN status BOOLEAN DEFAULT FALSE")
         if 'points_earned' not in columns:
             self.cursor.execute("ALTER TABLE winners ADD COLUMN points_earned INTEGER DEFAULT 0")
+        if 'tokens' not in columns:
+            self.cursor.execute("ALTER TABLE winners ADD COLUMN tokens INTEGER DEFAULT 0")
 
         # Create daily_points table if it does not exist
         self.cursor.execute('''CREATE TABLE IF NOT EXISTS daily_points (
@@ -122,7 +122,6 @@ class PickWinners(commands.Cog):
         user_id = interaction.user.id
         current_date = datetime.utcnow().strftime('%Y-%m-%d')
 
-        # Check if the user is in the winners list for the current date
         self.cursor.execute("SELECT user_id FROM winners WHERE date = ? AND user_id = ?", (current_date, user_id))
         result = self.cursor.fetchone()
 
@@ -130,7 +129,6 @@ class PickWinners(commands.Cog):
             await interaction.followup.send("You are not authorized to use this command.", ephemeral=True)
             return
 
-        # Check if the wallet address is already in the database for the current date
         self.cursor.execute("SELECT user_id FROM winners WHERE date = ? AND wallet_address = ?", (current_date, wallet_address))
         wallet_check = self.cursor.fetchone()
 
@@ -170,8 +168,8 @@ class PickWinners(commands.Cog):
                 user_points = result[0]
                 if user_points >= MAX_USER_POINTS:
                     continue
-                self.cursor.execute("UPDATE users SET points = 0, tokens = tokens + ? WHERE user_id = ?", (user_points, user_id))
-                self.cursor.execute("INSERT INTO winners (date, user_id, points_earned, status) VALUES (?, ?, ?, FALSE) ON CONFLICT(date, user_id) DO UPDATE SET points_earned = points_earned + ?", (current_date, user_id, user_points, user_points))
+                self.cursor.execute("UPDATE users SET points = 0 WHERE user_id = ?", (user_id,))
+                self.cursor.execute("INSERT INTO winners (date, user_id, points_earned, tokens, status) VALUES (?, ?, ?, ?, FALSE) ON CONFLICT(date, user_id) DO UPDATE SET points_earned = points_earned + ?, tokens = tokens + ?", (current_date, user_id, user_points, user_points, user_points, user_points))
                 self.conn.commit()
                 member = self.bot.get_user(user_id)
                 if member:
