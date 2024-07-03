@@ -174,10 +174,10 @@ sentTx().catch(err => {
   if (err) retryLogic(sentTx);
 });
 
-// // execute every 24hrs 2mins
-// cron.schedule("2 0 * * *", () => {
-//   sentTx();
-// });
+// execute every 24hrs 2mins
+cron.schedule("2 0 * * *", () => {
+  sentTx();
+});
 
 // // execute every 2 2mins
 // cron.schedule("*/2 * * * *", () => {
