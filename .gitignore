@@ -15,3 +15,5 @@ peb_pr.md
 # Dependencies
 node_modules
 
+.vscode/
+meme_bot.db:Zone.Identifier

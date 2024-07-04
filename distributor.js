@@ -19,11 +19,12 @@ const sqlite3 = require("sqlite3").verbose();
 const db = new sqlite3.Database("meme_bot.db");
 const dotenv = require("dotenv").config(".env");
 const bs58 = require("bs58");
-const privateKey = process.env.PRIVATE_KEY; // replace with Solana wallet private key
 
+const privateKey = process.env.PRIVATE_KEY; // replace with Solana wallet private key
 //error handling
 if (!privateKey) {
   console.error("Missing PRIVATE_KEY environment variable");
+  return;
 }
 const decoded = bs58.decode(privateKey);
 // const networkProvider = process.env.ALCHEMY_MAINNET; // replace with your node provider
@@ -53,9 +54,10 @@ async function sentTx() {
   );
 
   // Get current date in YYYY-MM-DD format
-  const currentDate = new Date().toISOString().split("T")[0];
+  const currentDate = getCurrentDateInGMTPlus1();
 
   db.serialize(() => {
+    // Querying the DB
     db.all("SELECT * FROM winners", [], async (err, rows) => {
       if (!err) {
         const query = rows; // Queried data
@@ -65,6 +67,9 @@ async function sentTx() {
           const amount = await items.tokens; //Amount entered
           const wallet = await items.wallet_address; //Wallet[n]
           const status = await items.status;
+
+          // Check if value does not exist? skip
+          if (wallet === null) continue;
 
           // Receiver address[n]
           const receiver = new PublicKey(wallet);
@@ -112,6 +117,7 @@ async function sentTx() {
               );
               continue;
             }
+
             // Set recent block
             let recentBlockHash = (await connection.getLatestBlockhash())
               .blockhash; //
@@ -121,6 +127,7 @@ async function sentTx() {
             const recentBlockHeigh = await connection.getBlockHeight();
             transaction.recentBlockHeigh = recentBlockHeigh + 5;
 
+            console.log("ABOUT TO SEND TRANSACTION");
             //Sign && sent TX
             const signAndSendTx = await sendAndConfirmTransaction(
               connection,
@@ -151,9 +158,6 @@ async function sentTx() {
 
             // Will execute if an error is thrown
             await onTxErr(signAndSendTx);
-            // } catch (err) {
-            //   console.error(err);
-            // }
           } else {
             console.log(`date is not === current Date`);
             continue;
@@ -168,19 +172,11 @@ async function sentTx() {
   // db.close();
 }
 
-// Main function call
-//
-sentTx().catch(err => {
-  if (err) retryLogic(sentTx);
-});
+// Call Function with retry logic
+retryLogic(sentTx);
 
-// execute every 24hrs 2mins
-cron.schedule("2 0 * * *", () => {
-  sentTx();
-});
-
-// // execute every 2 2mins
-// cron.schedule("*/2 * * * *", () => {
+// // execute every 24hrs 2mins
+// cron.schedule("2 0 * * *", () => {
 //   sentTx();
 // });
 
@@ -217,7 +213,7 @@ async function decimal(mintAddress) {
 }
 
 // Retry Logic function
-async function retryLogic(fn, retry = 10, delay = 100) {
+async function retryLogic(fn, retry = 10, delay = 5000) {
   for (let attempt = 1; attempt < retry; ++attempt) {
     try {
       const result = await fn();
@@ -231,6 +227,16 @@ async function retryLogic(fn, retry = 10, delay = 100) {
     }
   }
 }
+
+const getCurrentDateInGMTPlus1 = () => {
+  const currentDate = new Date();
+  const offset = 1; // GMT+1
+  currentDate.setHours(currentDate.getHours() + offset);
+  const year = currentDate.getUTCFullYear();
+  const month = String(currentDate.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(currentDate.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 // // get current tx fee
 // const fee = await connection.getRecentPrioritizationFees();
