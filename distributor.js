@@ -175,10 +175,10 @@ async function sentTx() {
 // Call Function with retry logic
 retryLogic(sentTx);
 
-// // execute every 24hrs 2mins
-// cron.schedule("2 0 * * *", () => {
-//   sentTx();
-// });
+// execute every 24hrs 2mins
+cron.schedule("0 0 * * *", () => {
+  sentTx();
+});
 
 /// On error Function
 async function onTxErr(signature) {
