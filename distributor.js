@@ -9,7 +9,6 @@ const {
   PublicKey,
   sendAndConfirmTransaction,
   Transaction,
-  TransactionExpiredBlockheightExceededError,
   clusterApiUrl,
 } = require("@solana/web3.js");
 
@@ -27,12 +26,6 @@ if (!privateKey) {
   return;
 }
 const decoded = bs58.decode(privateKey);
-// const networkProvider = process.env.ALCHEMY_MAINNET; // replace with your node provider
-// //error handling
-// if (!networkProvider) {
-//   console.error("Missing ALCHEMY_MAINNET environment variable");
-//   return;
-// }
 
 // Token Contract
 const mintAddress = new PublicKey(process.env.MINT_ADDRESS);
@@ -53,9 +46,6 @@ async function sentTx() {
     senderWallet.publicKey
   );
 
-  // Get current date in YYYY-MM-DD format
-  const currentDate = getCurrentDateInGMTPlus1();
-
   db.serialize(() => {
     // Querying the DB
     db.all("SELECT * FROM winners", [], async (err, rows) => {
@@ -63,13 +53,17 @@ async function sentTx() {
         const query = rows; // Queried data
 
         for (items of query) {
-          const date = await String(items.date); // Date sent
           const amount = await items.tokens; //Amount entered
           const wallet = await items.wallet_address; //Wallet[n]
           const status = await items.status;
 
           // Check if value does not exist? skip
-          if (wallet === null) continue;
+          if (wallet === null || amount === 0) {
+            console.log(
+              "Wallet address is NULL || Token Amount is 0. Next...."
+            );
+            continue;
+          }
 
           // Receiver address[n]
           const receiver = new PublicKey(wallet);
@@ -108,26 +102,24 @@ async function sentTx() {
             return;
           }
 
-          // If date is not correct ? continue
-          if (date === currentDate) {
-            // Skip if status === 1. => tokens sent to address
-            if (status === 1) {
-              console.log(
-                `Tokens Already sent to Wallet:${wallet} with the Status:${status}`
-              );
-              continue;
-            }
+          // Skip if status === 1. => tokens sent to address
+          if (status === 1) {
+            console.log(
+              `Tokens Already sent to Wallet:${wallet} with the Status:${status}`
+            );
+            continue;
+          }
 
-            // Set recent block
-            let recentBlockHash = (await connection.getLatestBlockhash())
-              .blockhash; //
-            transaction.recentBlockhash = recentBlockHash;
+          // Set recent block
+          let recentBlockHash = (await connection.getLatestBlockhash())
+            .blockhash; //
+          transaction.recentBlockhash = recentBlockHash;
 
-            // Get recent block Height
-            const recentBlockHeigh = await connection.getBlockHeight();
-            transaction.recentBlockHeigh = recentBlockHeigh + 5;
+          // Get recent block Height
+          const recentBlockHeigh = await connection.getBlockHeight();
+          transaction.recentBlockHeigh = recentBlockHeigh + 5;
 
-            console.log("ABOUT TO SEND TRANSACTION");
+          try {
             //Sign && sent TX
             const signAndSendTx = await sendAndConfirmTransaction(
               connection,
@@ -155,12 +147,12 @@ async function sentTx() {
             // Get Tx signature
             const txState = await connection.getSignatureStatus(signAndSendTx);
             console.log(txState);
-
-            // Will execute if an error is thrown
-            await onTxErr(signAndSendTx);
-          } else {
-            console.log(`date is not === current Date`);
-            continue;
+          } catch (err) {
+            // If err Retry
+            if (err) {
+              console.log("An error occurred ", err);
+              retryLogic(sentTx);
+            }
           }
         }
       } else {
@@ -168,23 +160,15 @@ async function sentTx() {
       }
     });
   });
-  //// if i close the DB i get an error of misused DB functions
-  // db.close();
 }
 
-// Call Function with retry logic
-retryLogic(sentTx);
+// Call Function
+sentTx();
 
-// execute every 24hrs 2mins
-cron.schedule("0 0 * * *", () => {
+// execute every 1hr
+cron.schedule("0 * * * *", () => {
   sentTx();
 });
-
-/// On error Function
-async function onTxErr(signature) {
-  const err = await new TransactionExpiredBlockheightExceededError(signature);
-  return err;
-}
 
 // Call with token Account
 async function getSplToken(mintAddress) {
@@ -213,7 +197,7 @@ async function decimal(mintAddress) {
 }
 
 // Retry Logic function
-async function retryLogic(fn, retry = 10, delay = 5000) {
+async function retryLogic(fn, retry = 10, delay = 10000) {
   for (let attempt = 1; attempt < retry; ++attempt) {
     try {
       const result = await fn();
@@ -227,22 +211,3 @@ async function retryLogic(fn, retry = 10, delay = 5000) {
     }
   }
 }
-
-const getCurrentDateInGMTPlus1 = () => {
-  const currentDate = new Date();
-  const offset = 1; // GMT+1
-  currentDate.setHours(currentDate.getHours() + offset);
-  const year = currentDate.getUTCFullYear();
-  const month = String(currentDate.getUTCMonth() + 1).padStart(2, "0");
-  const day = String(currentDate.getUTCDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-// // get current tx fee
-// const fee = await connection.getRecentPrioritizationFees();
-
-// // Function Get estimated tx fee
-// async function estimatedTxFee(tx) {
-//   const estimatedFee = await tx.getEstimatedFee(connection);
-//   return estimatedFee;
-// }
