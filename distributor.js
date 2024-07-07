@@ -109,17 +109,24 @@ async function sentTx() {
             );
             continue;
           }
-
-          // Set recent block
-          let recentBlockHash = (await connection.getLatestBlockhash())
-            .blockhash; //
-          transaction.recentBlockhash = recentBlockHash;
-
-          // Get recent block Height
-          const recentBlockHeigh = await connection.getBlockHeight();
-          transaction.recentBlockHeigh = recentBlockHeigh + 5;
-
           try {
+            // Set a delay before signing and sending the transaction
+            const delayInSeconds = 10; //Delay of 10 seconds
+            const delayInMilliseconds = delayInSeconds * 1000;
+
+            await new Promise(resolve =>
+              setTimeout(resolve, delayInMilliseconds)
+            );
+
+            // Set recent block
+            let recentBlockHash = (await connection.getLatestBlockhash())
+              .blockhash; //
+            transaction.recentBlockhash = recentBlockHash;
+
+            // Get recent block Height
+            const recentBlockHeigh = await connection.getBlockHeight();
+            transaction.recentBlockHeigh = recentBlockHeigh + 5;
+
             //Sign && sent TX
             const signAndSendTx = await sendAndConfirmTransaction(
               connection,
