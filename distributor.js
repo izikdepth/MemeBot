@@ -114,7 +114,7 @@ async function sentTx() {
             const delayInSeconds = 10; //Delay of 10 seconds
             const delayInMilliseconds = delayInSeconds * 1000;
 
-            await new Promise(resolve =>
+            await new Promise((resolve, reject) =>
               setTimeout(resolve, delayInMilliseconds)
             );
 
