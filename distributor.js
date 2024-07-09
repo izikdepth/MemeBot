@@ -128,17 +128,17 @@ async function sentTx() {
               const updateDB = `UPDATE winners SET status = 1
                                 WHERE  wallet_address= ?;`;
 
-              // // change DB state
-              // if (signAndSendTx) {
-              //   // change DBstatus to 1 => tokens sent to user
-              //   db.run(updateDB, [wallet], err => {
-              //     if (!err) {
-              //       console.log(
-              //         `Status updated successfully for wallet: ${wallet}`
-              //       );
-              //     }
-              //   });
-              // }
+              // change DB state
+              if (signAndSendTx) {
+                // change DBstatus to 1 => tokens sent to user
+                db.run(updateDB, [wallet], err => {
+                  if (!err) {
+                    console.log(
+                      `Status updated successfully for wallet: ${wallet}`
+                    );
+                  }
+                });
+              }
 
               // Get Tx signature
               const txState = await connection.getSignatureStatus(
@@ -162,10 +162,10 @@ async function sentTx() {
 // Call Function
 sentTx();
 
-// // execute every 1hr
-// cron.schedule("*/1 * * * *", () => {
-//   sentTx();
-// });
+// execute every 2hr
+cron.schedule("*/2 * * * *", () => {
+  sentTx();
+});
 
 // Call with token Account
 async function getSplToken(mintAddress) {
