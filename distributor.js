@@ -94,10 +94,7 @@ async function sentTx() {
               const senderBal = SenderTokenBalance * Math.pow(10, tknDecimal);
 
               // Check if sent amount is greater than wallet Amount
-              if (transferAmount > senderBal) {
-                console.log("INSUFFICIENT FUNDS");
-                return;
-              }
+              if (transferAmount > senderBal) return;
 
               // Set a delay before signing and sending the transaction
               const delayInSeconds = 10; //Delay of 10 seconds
@@ -145,8 +142,6 @@ async function sentTx() {
               );
               console.log(txState);
             } catch (err) {
-              console.error(err);
-              console.log("Failed Retrying............. ");
               (async () => await retryLogic(sentTx))();
             }
           }
