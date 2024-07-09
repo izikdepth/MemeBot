@@ -36,7 +36,6 @@ const senderWallet = Keypair.fromSecretKey(Uint8Array.from(decoded));
 async function sentTx() {
   // Token Decimals
   const tknDecimal = await decimal(mintAddress);
-  // AkwHuRTF8kon3Bw7v8CfK2xC66A6cX4syEmWMaX7Pb1S
   db.serialize(() => {
     // Querying the DB
     db.all(
@@ -47,9 +46,9 @@ async function sentTx() {
           const query = rows;
           //
           for (items of query) {
-            const wallet = "taG5d94R68U1x9nuzkVsKUrgRS7tPrRhry9vPoG6cXV"; //await items.wallet_address;
-            const amount = 0.1; //await items.tokens; //Amount entered
-            const status = 0; //await items.status;
+            const wallet = await items.wallet_address;
+            const amount = await items.tokens; //Amount entered
+            const status = await items.status;
 
             // Check if value does not exist? skip
             if (wallet === null) continue;
