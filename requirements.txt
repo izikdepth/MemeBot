@@ -6,3 +6,6 @@ pybase58
 websockets
 pandas
 tabulate
+websocket-client
+websockets
+aiosqlite

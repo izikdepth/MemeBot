@@ -4,7 +4,19 @@ from dotenv import load_dotenv
 import asyncio
 from discord import Intents
 
+def check_env_vars():
+    required_vars = [
+        "DISCORD_BOT"     
+    ]
+    
+    missing_vars = [var for var in required_vars if not os.getenv(var)]
+    if missing_vars:
+        raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")
+    else:
+        print("All required environment variables are set.")
+        
 load_dotenv()
+check_env_vars()
 
 intents = Intents.default()
 intents.message_content = True
@@ -21,11 +33,13 @@ async def on_ready():
 
 async def load_cogs():
     cogs_list = [
-        "cogs.pick_winners",
-        "cogs.raydium_listener",
+        "cogs.chat2earn.chat4points",
+        # "cogs.blockchainscanner.raydium_listener",
         "cogs.dc_commands",
+        "cogs.games.connect4",
+        "cogs.games.tictactoe",
     ]
-
+    
     for cog in cogs_list:
         try:
             await bot.load_extension(cog)
